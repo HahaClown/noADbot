@@ -6,14 +6,19 @@ using TwitchLib.Communication.Clients;
 using TwitchLib.Communication.Models;
 using TwitchLib.Communication.Events;
 using NickBuhro.Translit;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace noADbot {
     class Program {
         static void Main(string[] args) {
-            Bot bot = new Bot();
-            while(true) {
-                Console.ReadKey();
-            }
+            var hostBuilder = Host.CreateDefaultBuilder(args)
+            .ConfigureServices(x => {
+                x.AddSingleton<Bot>();
+            });
+            var host = hostBuilder.Build();
+            host.Services.GetRequiredService<Bot>().Initialize();
+            host.WaitForShutdown();
         }
     }
 
@@ -28,7 +33,7 @@ namespace noADbot {
         List<string> commandsNames;
         TwitchClient client;
 	
-        public Bot() {
+        public void Initialize() {
             ConnectionCredentials credentials = new ConnectionCredentials(settings.nickname, settings.oauthToken);
 	        var clientOptions = new ClientOptions
                 {
