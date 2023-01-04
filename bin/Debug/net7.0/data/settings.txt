@@ -1,3 +1,0 @@
-nickname:
-oauthtoken:
-consolelog:true
