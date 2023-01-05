@@ -1,5 +1,5 @@
 # noADbot
-After building project, in bin/ create data/ folder with {"settings.txt", "channels.txt", "modsIDs.txt", "phrases.txt", "links.txt"}.
+Before dotnet run, in noADbot/ create data/ folder with {"settings.txt", "channels.txt", "modsIDs.txt", "phrases.txt", "links.txt"}.
 In settings.txt create 3 strings:
 nickname:botnicname
 oauthtoken:bottoken

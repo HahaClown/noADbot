@@ -67,7 +67,7 @@ namespace noADbot {
         private void OnMessageReceived(object sender, OnMessageReceivedArgs args) {
 
             if(IsAd(args)) {
-                client.SendMessage(args.ChatMessage.Channel, $"/ban {args.ChatMessage.Username} advertising.");
+                client.SendMessage(args.ChatMessage.Channel, $"/ban {args.ChatMessage.Username} advertising");
                 ConsoleLog($"{args.ChatMessage.Username} banned");
             }
         }
@@ -125,7 +125,8 @@ namespace noADbot {
             commands.Add(currentCommand, (command) => {
 
                 if(modsIDs.Contains(command.args.Command.ChatMessage.UserId) && command.args.Command.ArgumentsAsList.Count != 0)  {
-                    foreach(var channel in command.args.Command.ArgumentsAsList) {
+                    foreach(var currentChannel in command.args.Command.ArgumentsAsList) {
+                        string channel = currentChannel.ToLower();
                         channels.Add(channel);
                         client.JoinChannel(channel);
                         foreach(var currentCommand in commands) {
@@ -140,7 +141,7 @@ namespace noADbot {
                     command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
                 }
             });
-            currentCommand = new Command("leave", 1, "Turns off the bot in the specified channel. #leave xXx_Example_xXx");
+            currentCommand = new Command("leave", 1, "Turns off the bot in the specified channel. #leave channel");
             commands.Add(currentCommand, (command) => {
 
                 if(modsIDs.Contains(command.args.Command.ChatMessage.UserId) && command.args.Command.ArgumentsAsList.Count != 0)  {
@@ -148,7 +149,8 @@ namespace noADbot {
                     if(command.args.Command.ArgumentsAsList.Count == 1) result = $"@{command.args.Command.ChatMessage.Username}, channel removed from list.";
                     else result = $"@{command.args.Command.ChatMessage.Username}, channels removed from list.";
                     client.SendMessage(command.args.Command.ChatMessage.Channel, result);
-                    foreach(var channel in command.args.Command.ArgumentsAsList) {
+                    foreach(var currentChannel in command.args.Command.ArgumentsAsList) {
+                        string channel = currentChannel.ToLower();
                         if(channels.Contains(channel)) {
                             channels.Remove(channel);
                             client.LeaveChannel(channel);
