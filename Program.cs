@@ -118,7 +118,7 @@ namespace noADbot {
                 if(uptimeSpan.Hours > 0) result += $"{uptimeSpan.Hours}h ";
                 if(uptimeSpan.Minutes > 0) result += $"{uptimeSpan.Minutes}m ";
                 if(uptimeSpan.Seconds > 0) result += $"{uptimeSpan.Seconds}s";
-                client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, Pong! Uptime: {result}");
+                client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, Pong! Uptime: {result} in {client.JoinedChannels.Count} channels.");
                 command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
             });
             currentCommand = new Command("join", 1, "Launches the bot to the specified channel. #join channel");
@@ -199,9 +199,10 @@ namespace noADbot {
                 if(command.args.Command.ArgumentsAsList.Count != 0) {
                     List<string> _descriptions = commands.Select(x => x.Key.description).ToList();
                     List<string> _commandNames = commands.Select(x => x.Key.name).ToList();
+                    List<int> _commandCooldowns = commands.Select(x => x.Key.cooldown).ToList();
                     string _commandArgument = command.args.Command.ArgumentsAsList[0];
                     if(_commandNames.Contains(_commandArgument)) {
-                        client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, {_descriptions[_commandNames.IndexOf(_commandArgument)]}");
+                        client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, Cooldown:{_commandCooldowns[_commandNames.IndexOf(_commandArgument)]}s. {_descriptions[_commandNames.IndexOf(_commandArgument)]}");
                     }
                     else {
                         client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, command not found.");
@@ -212,13 +213,6 @@ namespace noADbot {
                 }
                 command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
             });
-            currentCommand = new Command("channels", 10, "Returns list of connected channels. #channels");
-            commands.Add(currentCommand, (command) => {
-
-                client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, connected {channels.Count} channels: '{string.Join("', '", channels)}'");
-                command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
-            });
-            
             currentCommand = new Command("addlink", 1, "Adds link to list of AD-links. #addlink example.horse");
             commands.Add(currentCommand, (command) => {
 
