@@ -50,9 +50,10 @@ namespace noADbot {
             client.OnDisconnected += OnDisconnected;
             client.OnChatCommandReceived += OnChatCommandReceived;
 
-            client.AddChatCommandIdentifier('#');
-
             client.Initialize(credentials);
+            client.AddChatCommandIdentifier('#');
+            client.RemoveChatCommandIdentifier('!');
+
             InitializeCommands();
             commandsNames = commands.Select(x => x.Key.name).ToList();
             
@@ -111,14 +112,7 @@ namespace noADbot {
             commands = new Dictionary<Command, Action<Command>>();
             Command currentCommand = new Command("ping", 10, "Pong! #ping");
             commands.Add(currentCommand, (command) => {
-                
-                TimeSpan uptimeSpan = DateTime.Now - startDate;
-                string result = "";
-                if(uptimeSpan.Days > 0) result += $"{uptimeSpan.Days}d ";
-                if(uptimeSpan.Hours > 0) result += $"{uptimeSpan.Hours}h ";
-                if(uptimeSpan.Minutes > 0) result += $"{uptimeSpan.Minutes}m ";
-                if(uptimeSpan.Seconds > 0) result += $"{uptimeSpan.Seconds}s";
-                client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, Pong! Uptime: {result} in {client.JoinedChannels.Count} channels.");
+                client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, Pong! Uptime: {GetUptime()} in {client.JoinedChannels.Count} channels.");
                 command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
             });
             currentCommand = new Command("join", 1, "Launches the bot to the specified channel. #join channel");
@@ -270,6 +264,18 @@ namespace noADbot {
         }
         private void ConsoleLog(string log) {
             if(settings.isConsoleLogging) Console.WriteLine(log);
+        }
+        public string GetUptime() {
+            TimeSpan uptimeSpan = DateTime.Now - startDate;
+                string uptime = "";
+                if(uptimeSpan.Days > 0) uptime += $"{uptimeSpan.Days}d ";
+                if(uptimeSpan.Hours > 0 && uptime.Contains("d")) uptime += $", {uptimeSpan.Hours}h ";
+                else if(uptimeSpan.Hours > 0) uptime += $"{uptimeSpan.Hours}h";
+                if(uptimeSpan.Minutes > 0 && uptime.Contains("h")) uptime += $", {uptimeSpan.Minutes}m ";
+                else if(uptimeSpan.Minutes > 0) uptime += $"{uptimeSpan.Minutes}m";
+                if(uptimeSpan.Seconds > 0 && uptime.Contains("m")) uptime += $", {uptimeSpan.Seconds}s";
+                else if(uptimeSpan.Seconds > 0) uptime += $"{uptimeSpan.Seconds}s";
+                return uptime;
         }
     }
 }
