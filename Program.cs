@@ -280,6 +280,10 @@ namespace noADbot {
                 foreach (var phrase in phrases) {
                     result += $"{phrase}\n";
                 }
+                result += $"\nBanned user's IDs:";
+                foreach (var id in bannedUserIDs) {
+                    result += $"{id}\n";
+                }
                 var data = new StringContent(result, Encoding.UTF8, "text/plain");
                 var response = await httpClient.PostAsync(url, data);
                 var answer = response.Content.ReadAsStringAsync().Result;
