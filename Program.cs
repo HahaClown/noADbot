@@ -9,6 +9,10 @@ using NickBuhro.Translit;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
+using System.Text;
+using System.Net;
+using System.Text.Json;
+
 namespace noADbot {
     class Program {
         static void Main(string[] args) {
@@ -29,6 +33,7 @@ namespace noADbot {
         List<string> links = File.ReadAllLines(Directory.GetCurrentDirectory() + "/data/links.txt").ToList();
         List<string> channels = File.ReadAllLines(Directory.GetCurrentDirectory() + "/data/channels.txt").ToList();
         List<string> modsIDs = File.ReadAllLines(Directory.GetCurrentDirectory() + "/data/modsIDs.txt").ToList();
+        List<string> bannedUserIDs = File.ReadAllLines(Directory.GetCurrentDirectory() + "/data/bannedUsersIDs.txt").ToList();
         Dictionary<Command, Action<Command>> commands;
         List<string> commandsNames;
         TwitchClient client;
@@ -115,7 +120,7 @@ namespace noADbot {
                 client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, Pong! Uptime: {GetUptime()} in {client.JoinedChannels.Count} channels.");
                 command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
             });
-            currentCommand = new Command("join", 1, "Launches the bot to the specified channel. #join channel");
+            currentCommand = new Command("join", 1, "Launches the bot in the specified channel. #join channel");
             commands.Add(currentCommand, (command) => {
 
                 if(modsIDs.Contains(command.args.Command.ChatMessage.UserId) && command.args.Command.ArgumentsAsList.Count != 0)  {
@@ -196,7 +201,7 @@ namespace noADbot {
                     List<int> _commandCooldowns = commands.Select(x => x.Key.cooldown).ToList();
                     string _commandArgument = command.args.Command.ArgumentsAsList[0];
                     if(_commandNames.Contains(_commandArgument)) {
-                        client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, Cooldown:{_commandCooldowns[_commandNames.IndexOf(_commandArgument)]}s. {_descriptions[_commandNames.IndexOf(_commandArgument)]}");
+                        client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, Cooldown: {_commandCooldowns[_commandNames.IndexOf(_commandArgument)]}s. {_descriptions[_commandNames.IndexOf(_commandArgument)]}");
                     }
                     else {
                         client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, command not found.");
@@ -234,6 +239,7 @@ namespace noADbot {
                     if(command.args.Command.ArgumentsAsList.Count == 1) result = $"@{command.args.Command.ChatMessage.Username}, link removed from list.";
                     else result = $"@{command.args.Command.ChatMessage.Username}, links removed from list.";
                     client.SendMessage(command.args.Command.ChatMessage.Channel, result);
+                    command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
                 }
             });
             currentCommand = new Command("addphrase", 1, "Adds a phrase to the list of possible ad bot phrases. #addphrase buy followers");
@@ -242,6 +248,7 @@ namespace noADbot {
                     phrases.Add(FormatMessage(command.args.Command.ArgumentsAsString));
                     File.WriteAllLines(Directory.GetCurrentDirectory() + "/data/phrases.txt", phrases);
                     client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, phrase added to list.");
+                    command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
                 }
             });
             currentCommand = new Command("removephrase", 1, "Removes a phrase from the list of possible ad bot phrases. #removephrase buy viewers");
@@ -250,6 +257,72 @@ namespace noADbot {
                     phrases.Remove(FormatMessage(command.args.Command.ArgumentsAsString));
                     File.WriteAllLines(Directory.GetCurrentDirectory() + "/data/phrases.txt", phrases);
                     client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, phrase removed from list.");
+                    command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
+                }
+            });
+            currentCommand = new Command("data", 60, "Return URL to HasteBin with bot's data. #data");
+            commands.Add(currentCommand, async (command) => {
+                string url = "https://hastebin.com/documents";
+                var httpClient = new HttpClient();
+                string result = $"Channels:\n";
+                foreach (var channel in channels) {
+                    result += $"{channel}\n";
+                }
+                result += $"\nModerator's UserIDs:\n";
+                foreach (var userID in modsIDs) {
+                    result += $"{userID}\n";
+                }
+                result += $"\nLinks:\n";
+                foreach (var link in links) {
+                    result += $"{link}\n";
+                }
+                result += $"\nPhrases:\n";
+                foreach (var phrase in phrases) {
+                    result += $"{phrase}\n";
+                }
+                var data = new StringContent(result, Encoding.UTF8, "text/plain");
+                var response = await httpClient.PostAsync(url, data);
+                var answer = response.Content.ReadAsStringAsync().Result;
+                client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, bot's data here: https://hastebin.com/{answer.Replace(@"{""key"":""", string.Empty).Replace(@"""}", string.Empty)}");
+                command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
+            });
+            currentCommand = new Command("joinme", 10, "Launches the bot in your channel. #joinme");
+            commands.Add(currentCommand, (command) => {
+                string channel = command.args.Command.ChatMessage.Username.ToLower();
+                if(!bannedUserIDs.Contains(command.args.Command.ChatMessage.UserId) && !channels.Contains(channel)) {
+                    channels.Add(channel);
+                    client.JoinChannel(channel);
+                    foreach(var currentCommand in commands) {
+                        currentCommand.Key.lastUses.Add(channel, DateTime.MinValue);
+                    }
+                    File.WriteAllLines(Directory.GetCurrentDirectory() + "/data/channels.txt", channels);
+                    client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, channel added to list.");
+                    command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
+                }
+            });
+            currentCommand = new Command("leaveme", 10, "Turns off the bot in your channel. #leaveme");
+            commands.Add(currentCommand, (command) => {
+                string channel = command.args.Command.ChatMessage.Username.ToLower();
+                if(channel.Contains(channel)) {
+                    channels.Remove(channel);
+                    client.LeaveChannel(channel);
+                    foreach(var currentCommand in commands) {
+                        currentCommand.Key.lastUses.Remove(channel);
+                    }
+                    File.WriteAllLines(Directory.GetCurrentDirectory() + "/data/channels.txt", channels);
+                    client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, channel removed from list.");
+                    command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
+                }
+            });
+            currentCommand = new Command("ban", 1, "Ban user for #joinme. #ban UserID");
+            commands.Add(currentCommand, (command) => {
+                if(modsIDs.Contains(command.args.Command.ChatMessage.UserId) && command.args.Command.ArgumentsAsList.Count != 0) {
+                    foreach(string id in command.args.Command.ArgumentsAsList) {
+                        bannedUserIDs.Add(id);
+                    }
+                    File.WriteAllLines(Directory.GetCurrentDirectory() + "/data/bannedUsersIDs.txt", bannedUserIDs);
+                    if(command.args.Command.ArgumentsAsList.Count == 1) client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, user succesfuly banned.");
+                    else client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, users succesfuly banned.");
                 }
             });
 
@@ -268,10 +341,10 @@ namespace noADbot {
         public string GetUptime() {
             TimeSpan uptimeSpan = DateTime.Now - startDate;
                 string uptime = "";
-                if(uptimeSpan.Days > 0) uptime += $"{uptimeSpan.Days}d ";
-                if(uptimeSpan.Hours > 0 && uptime.Contains("d")) uptime += $", {uptimeSpan.Hours}h ";
+                if(uptimeSpan.Days > 0) uptime += $"{uptimeSpan.Days}d";
+                if(uptimeSpan.Hours > 0 && uptime.Contains("d")) uptime += $", {uptimeSpan.Hours}h";
                 else if(uptimeSpan.Hours > 0) uptime += $"{uptimeSpan.Hours}h";
-                if(uptimeSpan.Minutes > 0 && uptime.Contains("h")) uptime += $", {uptimeSpan.Minutes}m ";
+                if(uptimeSpan.Minutes > 0 && uptime.Contains("h")) uptime += $", {uptimeSpan.Minutes}m";
                 else if(uptimeSpan.Minutes > 0) uptime += $"{uptimeSpan.Minutes}m";
                 if(uptimeSpan.Seconds > 0 && uptime.Contains("m")) uptime += $", {uptimeSpan.Seconds}s";
                 else if(uptimeSpan.Seconds > 0) uptime += $"{uptimeSpan.Seconds}s";
