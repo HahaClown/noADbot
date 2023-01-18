@@ -8,10 +8,7 @@ using TwitchLib.Communication.Events;
 using NickBuhro.Translit;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-
 using System.Text;
-using System.Net;
-using System.Text.Json;
 
 namespace noADbot {
     class Program {
@@ -264,26 +261,7 @@ namespace noADbot {
             commands.Add(currentCommand, async (command) => {
                 string url = "https://hastebin.com/documents";
                 var httpClient = new HttpClient();
-                string result = $"Channels:\n";
-                foreach (var channel in channels) {
-                    result += $"{channel}\n";
-                }
-                result += $"\nModerator's UserIDs:\n";
-                foreach (var userID in modsIDs) {
-                    result += $"{userID}\n";
-                }
-                result += $"\nLinks:\n";
-                foreach (var link in links) {
-                    result += $"{link}\n";
-                }
-                result += $"\nPhrases:\n";
-                foreach (var phrase in phrases) {
-                    result += $"{phrase}\n";
-                }
-                result += $"\nBanned user's IDs:";
-                foreach (var id in bannedUserIDs) {
-                    result += $"{id}\n";
-                }
+                string result = $"Channels:\n" + string.Join($"\n", channels) + $"\n\nModerator's UserIDs:\n" + string.Join($"\n", modsIDs) + $"\n\nLinks:\n" + string.Join($"\n", links) + $"\n\nPhrases:\n" + string.Join($"\n", phrases) + $"\n\nBanned users IDs:\n" + string.Join($"\n", bannedUserIDs);
                 var data = new StringContent(result, Encoding.UTF8, "text/plain");
                 var response = await httpClient.PostAsync(url, data);
                 var answer = response.Content.ReadAsStringAsync().Result;
@@ -322,11 +300,26 @@ namespace noADbot {
             commands.Add(currentCommand, (command) => {
                 if(modsIDs.Contains(command.args.Command.ChatMessage.UserId) && command.args.Command.ArgumentsAsList.Count != 0) {
                     foreach(string id in command.args.Command.ArgumentsAsList) {
-                        bannedUserIDs.Add(id);
+                        if(!bannedUserIDs.Contains(id)) {
+                            bannedUserIDs.Add(id);
+                        }
                     }
                     File.WriteAllLines(Directory.GetCurrentDirectory() + "/data/bannedUsersIDs.txt", bannedUserIDs);
                     if(command.args.Command.ArgumentsAsList.Count == 1) client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, user succesfuly banned.");
                     else client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, users succesfuly banned.");
+                }
+            });
+            currentCommand = new Command("unban", 1, "Unban user for #joinme. #unban UserID");
+            commands.Add(currentCommand, (command) => {
+                if(modsIDs.Contains(command.args.Command.ChatMessage.UserId) && command.args.Command.ArgumentsAsList.Count != 0) {
+                    foreach(string id in command.args.Command.ArgumentsAsList) {
+                        if(bannedUserIDs.Contains(id)) {
+                            bannedUserIDs.Remove(id);
+                        }
+                    }
+                    File.WriteAllLines(Directory.GetCurrentDirectory() + "/data/bannedUsersIDs.txt", bannedUserIDs);
+                    if(command.args.Command.ArgumentsAsList.Count == 1) client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, user succesfuly unbanned.");
+                    else client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, users succesfuly unbanned.");
                 }
             });
 
