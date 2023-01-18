@@ -9,6 +9,10 @@ In modsIDs.txt write strings with bot's moderators UserIDs.
 In phrases.txt write strings with modified via FormatMessage(string) messages.
 In links.txt write strings witch modified via FormatMessage(string) links.
 In bannedUsersIDs.txt write strings with UserIDs of banned users for #joinme.
+<<<<<<< HEAD
+
+=======
+>>>>>>> fa37f20 (1.1.1)
 
 
 C# .net 7.0
