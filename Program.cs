@@ -9,6 +9,7 @@ using NickBuhro.Translit;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text;
+using System.Text.Json;
 
 namespace noADbot {
     class Program {
@@ -259,13 +260,13 @@ namespace noADbot {
             });
             currentCommand = new Command("data", 60, "Return URL to HasteBin with bot's data. #data");
             commands.Add(currentCommand, async (command) => {
-                string url = "https://hastebin.com/documents";
+                string url = "https://haste.zneix.eu/documents";
                 var httpClient = new HttpClient();
                 string result = $"Channels:\n" + string.Join($"\n", channels) + $"\n\nModerator's UserIDs:\n" + string.Join($"\n", modsIDs) + $"\n\nLinks:\n" + string.Join($"\n", links) + $"\n\nPhrases:\n" + string.Join($"\n", phrases) + $"\n\nBanned users IDs:\n" + string.Join($"\n", bannedUserIDs);
                 var data = new StringContent(result, Encoding.UTF8, "text/plain");
                 var response = await httpClient.PostAsync(url, data);
                 var answer = response.Content.ReadAsStringAsync().Result;
-                client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, bot's data here: https://hastebin.com/{answer.Replace(@"{""key"":""", string.Empty).Replace(@"""}", string.Empty)}");
+                client.SendMessage(command.args.Command.ChatMessage.Channel, $"@{command.args.Command.ChatMessage.Username}, bot's data here: https://haste.zneix.eu/{answer.Replace(@"{""key"":""", string.Empty).Replace(@"""}", string.Empty)}");
                 command.lastUses[command.args.Command.ChatMessage.Channel] = DateTime.Now;
             });
             currentCommand = new Command("joinme", 10, "Launches the bot in your channel. #joinme");

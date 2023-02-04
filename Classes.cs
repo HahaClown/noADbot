@@ -13,8 +13,8 @@ namespace noADbot {
         }
     }
     public class Settings {
-        public string nickname {get;}
-        public string oauthToken {get;}
+        public string? nickname {get;}
+        public string? oauthToken {get;}
         public bool isConsoleLogging {get;}
         public Settings(string[] settings) {
             foreach(string parameter in settings) {
