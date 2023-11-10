@@ -9,7 +9,8 @@ using NickBuhro.Translit;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text;
-using System.Text.Json;
+using TwitchLib.Api;
+using TwitchLib.Api.Helix.Models.Moderation.BanUser;
 
 namespace noADbot {
     class Program {
@@ -35,9 +36,10 @@ namespace noADbot {
         Dictionary<Command, Action<Command>> commands;
         List<string> commandsNames;
         TwitchClient client;
+        TwitchAPI helixAPI;
 	
         public void Initialize() {
-            ConnectionCredentials credentials = new ConnectionCredentials(settings.nickname, settings.oauthToken);
+            ConnectionCredentials credentials = new ConnectionCredentials(settings.nickname, settings.accessToken);
 	        var clientOptions = new ClientOptions
                 {
                     MessagesAllowedInPeriod = 750,
@@ -59,6 +61,10 @@ namespace noADbot {
 
             InitializeCommands();
             commandsNames = commands.Select(x => x.Key.name).ToList();
+
+            helixAPI = new TwitchAPI();
+            helixAPI.Settings.ClientId = settings.clientID;
+            helixAPI.Settings.AccessToken = settings.accessToken;
             
             client.Connect();
         }
@@ -71,7 +77,7 @@ namespace noADbot {
         private void OnMessageReceived(object sender, OnMessageReceivedArgs args) {
 
             if(IsAd(args)) {
-                client.SendMessage(args.ChatMessage.Channel, $"/ban {args.ChatMessage.Username} advertising");
+                BanUser(args.ChatMessage.RoomId, settings.botID, args.ChatMessage.UserId, settings.accessToken);
                 ConsoleLog($"{args.ChatMessage.Username} banned");
             }
         }
@@ -347,6 +353,14 @@ namespace noADbot {
                 if(uptimeSpan.Seconds > 0 && uptime.Contains("m")) uptime += $", {uptimeSpan.Seconds}s";
                 else if(uptimeSpan.Seconds > 0) uptime += $"{uptimeSpan.Seconds}s";
                 return uptime;
+        }
+        private async void BanUser(string broadcasterID, string moderatorID, string userID, string token) {
+            BanUserRequest banRequest = new()
+            {
+                UserId = userID,
+                Reason = "Advertising"
+            };
+            await helixAPI.Helix.Moderation.BanUserAsync(broadcasterID, moderatorID, banRequest, token);
         }
     }
 }

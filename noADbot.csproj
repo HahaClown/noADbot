@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
     <PackageReference Include="NickBuhro.Translit" Version="1.4.5" />
+    <PackageReference Include="Twitchlib.API" Version="3.9.0" />
     <PackageReference Include="twitchlib.client" Version="3.3.1" />
   </ItemGroup>
 

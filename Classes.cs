@@ -14,7 +14,9 @@ namespace noADbot {
     }
     public class Settings {
         public string? nickname {get;}
-        public string? oauthToken {get;}
+        public string? accessToken {get;}
+        public string? botID {get;}
+        public string? clientID {get;}
         public bool isConsoleLogging {get;}
         public Settings(string[] settings) {
             foreach(string parameter in settings) {
@@ -25,13 +27,20 @@ namespace noADbot {
                     case "nickname":
                         nickname = splitedParameter[1];
                         break;
-                    case "oauthtoken":
-                        oauthToken = splitedParameter[1];
-                        break;
                     case "consolelog":
                         if(splitedParameter[1] == "true") isConsoleLogging = true;
                         else isConsoleLogging = false;
                         break;
+                    case "accesstoken":
+                        accessToken = splitedParameter[1];
+                        break;
+                    case "botid":
+                        botID = splitedParameter[1];
+                        break;
+                    case "clientid":
+                        clientID = splitedParameter[1];
+                        break;
+
                 }
             }
         }
